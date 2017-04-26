@@ -17,22 +17,18 @@ type channel [windowSize]message
 
 var worst time.Duration
 
-var m []byte
-
-func mkMessage(n int, arena *slab.Arena) message {
-	//m := make(message, 1024)
-	m = arena.Alloc(1024)
+func mkMessage(n int, m []byte) message {
 	for i := range m {
 		m[i] = byte(n)
 	}
-	arena.DecRef(m)
 	return m
 }
 
-func pushMsg(c *channel, highID int) {
+func pushMsg(c *channel, highID int, msg []byte, arena *slab.Arena) {
 	start := time.Now()
-	m := mkMessage(highID, slab.NewArena(1, 1024, 2, nil))
+	m := mkMessage(highID, msg)
 	(*c)[highID%windowSize] = m
+	arena.DecRef(msg)
 	elapsed := time.Since(start)
 	if elapsed > worst {
 		worst = elapsed
@@ -41,8 +37,12 @@ func pushMsg(c *channel, highID int) {
 
 func main() {
 	var c channel
+	var msg []byte
+	arena := slab.NewArena(1, 1024, 2, nil)
+
 	for i := 0; i < msgCount; i++ {
-		pushMsg(&c, i)
+		msg = arena.Alloc(1024)
+		pushMsg(&c, i, msg, arena)
 	}
 	fmt.Println("Worst push time: ", worst)
 }
