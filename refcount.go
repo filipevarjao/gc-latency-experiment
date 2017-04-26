@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"time"
-	slab "../go-slab"
+	slab "github.com/filipevarjao/go-slab"
 )
 
 const (
